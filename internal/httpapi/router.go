@@ -42,9 +42,15 @@ func (h *Handler) Router() chi.Router {
 		r.Get("/auth", h.authorize)
 		r.Post("/logout", h.logout)
 		r.Get("/healthz", h.healthz)
+		r.Get("/login.js", h.serveLoginJS)
 	})
 
 	return r
+}
+
+// serveLoginJS serves the embedded static login.js file.
+func (h *Handler) serveLoginJS(w http.ResponseWriter, r *http.Request) {
+	http.ServeFileFS(w, r, webui.AssetFS(), "assets/login.js")
 }
 
 func (h *Handler) securityHeaders(next http.Handler) http.Handler {
@@ -52,14 +58,15 @@ func (h *Handler) securityHeaders(next http.Handler) http.Handler {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("X-Frame-Options", "DENY")
 		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
-		// Strict CSP: allow scripts only from jsDelivr (htmx is loaded from there).
-		// style-src allows 'unsafe-inline' because the embedded login page uses
-		// inline styles for the light/dark theme and form layout.
+		// Strict CSP: allow scripts from this origin (login.js) and jsDelivr
+		// (htmx), inline styles, same-origin images and form posts, and
+		// same-origin fetch requests for the htmx-driven login form.
 		w.Header().Set("Content-Security-Policy",
 			"default-src 'none'; "+
-				"script-src https://cdn.jsdelivr.net; "+
+				"script-src 'self' https://cdn.jsdelivr.net; "+
 				"style-src 'unsafe-inline'; "+
 				"img-src 'self'; "+
+				"connect-src 'self'; "+
 				"form-action 'self'; "+
 				"frame-ancestors 'none'; "+
 				"base-uri 'self'")

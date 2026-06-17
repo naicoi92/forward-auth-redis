@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"io/fs"
 )
 
-//go:embed assets/login.html assets/error_fragment.html
+//go:embed assets/login.html assets/login.js assets/error_fragment.html
 var assets embed.FS
 
 // Templates holds the parsed HTML templates used by the HTTP handlers.
@@ -28,6 +29,12 @@ func Load() (*Templates, error) {
 		return nil, fmt.Errorf("parse error fragment template: %w", err)
 	}
 	return &Templates{login: loginTmpl, errorFragment: errTmpl}, nil
+}
+
+// AssetFS exposes the embedded static assets (e.g. login.js) for direct
+// serving via http.FileServer or http.ServeFileFS.
+func AssetFS() fs.FS {
+	return assets
 }
 
 // LoginData is passed to the login template.

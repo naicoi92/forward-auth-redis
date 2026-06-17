@@ -37,6 +37,8 @@ export JWT_SECRET="$(openssl rand -base64 48)"
 docker compose up -d
 ```
 
+The example `Caddyfile` uses `http://app.example.com` as a placeholder for local HTTP testing. For local testing, edit `/etc/hosts` to point `app.example.com` to `127.0.0.1`. For production HTTPS, remove the `http://` prefix, change the site name to your real domain, and remove `auto_https off`.
+
 ## Seed a user
 
 ```bash
@@ -57,11 +59,13 @@ The command prints the TOTP secret and an `otpauth://` URI. Scan the URI with yo
 
 ## Test the login
 
-Open the login page in a browser:
+Open the login page in a browser (served through Caddy on port 80):
 
 ```
-http://localhost:8080/com.auth.forward/login
+http://app.example.com/com.auth.forward/login
 ```
+
+For local testing, edit `/etc/hosts` to point `app.example.com` to `127.0.0.1`. For production, remove the `http://` prefix in the `Caddyfile`, change the site name to your real domain, and remove `auto_https off`.
 
 Enter the username and the current 6-digit TOTP code. On success you are redirected to `/` and the `fa_token` cookie is set.
 
@@ -71,13 +75,13 @@ You can also test with curl:
 CODE=$(oathtool -b --totp "your-secret")
 curl -i -c cookies.txt \
   -d "username=alice&code=${CODE}&return_to=/" \
-  http://localhost:8080/com.auth.forward/login
+  http://app.example.com/com.auth.forward/login
 ```
 
-Forward auth check:
+Forward auth check (the endpoint used internally by Caddy):
 
 ```bash
-curl -i -b cookies.txt http://localhost:8080/com.auth.forward/auth
+curl -i -b cookies.txt http://app.example.com/com.auth.forward/auth
 # HTTP/1.1 200 OK
 # X-Auth-User: alice
 ```
@@ -85,12 +89,12 @@ curl -i -b cookies.txt http://localhost:8080/com.auth.forward/auth
 Protected route via Caddy:
 
 ```bash
-curl -i -b cookies.txt http://localhost/app
+curl -i -b cookies.txt http://app.example.com/app
 # HTTP/1.1 200 OK
 # "Hello from protected demo app"
 
 # Without cookie:
-curl -i http://localhost/app
+curl -i http://app.example.com/app
 # HTTP/1.1 302 Found
 # Location: /com.auth.forward/login?return_to=%2Fapp
 ```
@@ -98,7 +102,7 @@ curl -i http://localhost/app
 ## Health check
 
 ```bash
-curl http://localhost:8080/com.auth.forward/healthz
+curl http://app.example.com/com.auth.forward/healthz
 ```
 
 Returns `200 ok` if both Redis writer and reader are reachable, otherwise `503`.
@@ -106,10 +110,12 @@ Returns `200 ok` if both Redis writer and reader are reachable, otherwise `503`.
 ## Local development (without Docker)
 
 1. Start Redis master (and optionally a replica):
+
    ```bash
    redis-server --port 6379
    redis-server --port 6380 --replicaof localhost 6379
    ```
+
 2. Copy `.env.example` to `.env` and fill in `JWT_SECRET`.
 3. Seed a user: `go run ./cmd/seed alice`
 4. Run the server: `go run ./cmd/server`
@@ -134,6 +140,40 @@ Returns `200 ok` if both Redis writer and reader are reachable, otherwise `503`.
 │   └── docker-compose.yml
 ├── Dockerfile
 └── .env.example
+```
+
+## Caddy and Traefik notes
+
+The example `Caddyfile` uses `handle` blocks to exclude the auth service's own paths from `forward_auth`:
+
+- `handle /com.auth.forward/*` proxies to the auth service directly, so the login page, logout, and health endpoints are reachable without triggering an auth check.
+- `handle { ... }` matches everything else and applies `forward_auth` before proxying to the upstream app.
+
+This prevents the redirect loop that would otherwise occur when a user visits `/com.auth.forward/login`: `forward_auth` would intercept the request, redirect to login, and create an infinite loop.
+
+### Generate JSON config from the Caddyfile
+
+Caddy's native JSON config does **not** have a built-in `"forward_auth"` handler type. Use `caddy adapt` to compile the Caddyfile into the correct JSON form:
+
+```bash
+cd deploy
+caddy adapt --config Caddyfile --adapter caddyfile > caddy.json
+```
+
+### Traefik (future support)
+
+The same pattern applies in Traefik: route requests under the auth base path directly to the auth service (without the `forward-auth` middleware), and apply the middleware only to the upstream application routes:
+
+```yaml
+routers:
+  auth-paths:
+    rule: Host(`app.example.com`) && PathPrefix(`/com.auth.forward`)
+    service: auth
+    # Do not apply the forward-auth middleware here
+  app:
+    rule: Host(`app.example.com`)
+    service: app
+    middlewares: [forward-auth]
 ```
 
 ## Security notes
