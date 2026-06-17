@@ -23,7 +23,13 @@ type Handler struct {
 }
 
 // New creates a new HTTP handler set.
-func New(cfg *config.Config, svc *auth.Service, cookie *cookiex.Builder, redis *redisx.Clients, templates *webui.Templates) *Handler {
+func New(
+	cfg *config.Config,
+	svc *auth.Service,
+	cookie *cookiex.Builder,
+	redis *redisx.Clients,
+	templates *webui.Templates,
+) *Handler {
 	return &Handler{cfg: cfg, svc: svc, cookie: cookie, redis: redis, templates: templates}
 }
 
