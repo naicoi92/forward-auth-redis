@@ -19,6 +19,7 @@
         --glow-1: color-mix(in oklch, var(--accent) 14%, transparent);
         --glow-2: color-mix(in oklch, var(--accent) 10%, transparent);
         --error: oklch(55% 0.18 25);
+        --error-bg: oklch(95% 0.04 25);
 
         --font-display: "Avenir Next", -apple-system, BlinkMacSystemFont,
           system-ui, sans-serif;
@@ -39,6 +40,7 @@
           --glow-1: color-mix(in oklch, var(--accent) 18%, transparent);
           --glow-2: color-mix(in oklch, var(--accent) 12%, transparent);
           --error: oklch(65% 0.16 25);
+          --error-bg: oklch(28% 0.05 25);
         }
       }
 
@@ -115,14 +117,27 @@
 
       .form-msg {
         display: none;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px 14px;
+        margin-bottom: 20px;
+        background: var(--error-bg);
+        border: 1px solid color-mix(in oklch, var(--error) 30%, transparent);
+        border-radius: 12px;
         color: var(--error);
         font-size: 14px;
-        margin-bottom: 16px;
-        line-height: 1.4;
-        text-align: center;
+        line-height: 1.45;
+        text-align: left;
       }
       .form-msg:not(:empty) {
-        display: block;
+        display: flex;
+        animation: shake 0.35s ease;
+      }
+      .form-msg svg {
+        flex-shrink: 0;
+        width: 18px;
+        height: 18px;
+        margin-top: 1px;
       }
 
       .field {
@@ -159,6 +174,13 @@
         border-color: var(--accent);
         box-shadow: 0 0 0 4px
           color-mix(in oklch, var(--accent) 16%, transparent);
+      }
+      .field input[aria-invalid="true"] {
+        border-color: var(--error);
+        background: color-mix(in oklch, var(--error-bg) 50%, var(--surface));
+      }
+      .field input[aria-invalid="true"]:focus {
+        box-shadow: 0 0 0 4px color-mix(in oklch, var(--error) 14%, transparent);
       }
 
       .password-wrap {
@@ -246,6 +268,25 @@
         }
       }
 
+      @keyframes shake {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        20% {
+          transform: translateX(-4px);
+        }
+        40% {
+          transform: translateX(4px);
+        }
+        60% {
+          transform: translateX(-3px);
+        }
+        80% {
+          transform: translateX(3px);
+        }
+      }
+
       @media (max-width: 420px) {
         .stage {
           padding: 16px;
@@ -264,10 +305,23 @@
       <main class="login-card">
         <div class="login-header">
           <h1>Sign in</h1>
-          <p>Enter your username and 6-digit authentication code.</p>
+          <p>Enter your username and password.</p>
         </div>
 
-        <div id="form-msg" class="form-msg">{{.Error}}</div>
+        <div id="form-msg" class="form-msg" role="alert" aria-live="polite">
+          {{if .Error}}<svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line></svg
+          ><span>{{.Error}}</span>{{end}}
+        </div>
 
         <!--
         htmx handles the POST automatically. The browser falls back to the real
@@ -301,25 +355,23 @@
           </div>
 
           <div class="field">
-            <label for="password">Authentication code</label>
+            <label for="password">Password</label>
             <div class="password-wrap">
               <input
                 type="password"
                 id="password"
-                name="code"
-                autocomplete="one-time-code"
-                inputmode="numeric"
-                pattern="[0-9]{6}"
-                maxlength="6"
-                placeholder="123456"
+                name="password"
+                autocomplete="current-password"
+                placeholder="••••••••"
                 required
+                minlength="1"
               />
               <button
                 type="button"
                 class="toggle-password"
                 id="toggle-password"
-                aria-label="Show code"
-                title="Show / hide code"
+                aria-label="Show password"
+                title="Show / hide password"
               >
                 <svg
                   id="eye-open"

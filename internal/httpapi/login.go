@@ -23,7 +23,7 @@ func (h *Handler) loginForm(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// loginSubmit verifies the TOTP code and establishes a session.
+// loginSubmit verifies the submitted password as a TOTP code and establishes a session.
 func (h *Handler) loginSubmit(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		h.renderLoginError(w, r, "invalid form", http.StatusBadRequest)
@@ -31,10 +31,10 @@ func (h *Handler) loginSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	username := r.PostFormValue("username")
-	code := r.PostFormValue("code")
+	password := r.PostFormValue("password")
 	returnTo := r.PostFormValue("return_to")
 
-	result, err := h.svc.Login(r.Context(), username, code, returnTo)
+	result, err := h.svc.Login(r.Context(), username, password, returnTo)
 	if err != nil {
 		// All TOTP/replay failures are reported with the same generic message to
 		// avoid leaking whether a username exists or whether a code was replayed.
