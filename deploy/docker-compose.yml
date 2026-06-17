@@ -1,0 +1,92 @@
+services:
+  redis-master:
+    image: redis:7-alpine
+    container_name: fa-redis-master
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-master-data:/data
+    networks:
+      - fa-net
+
+  redis-replica:
+    image: redis:7-alpine
+    container_name: fa-redis-replica
+    command: ["redis-server", "--replicaof", "redis-master", "6379"]
+    ports:
+      - "6380:6379"
+    depends_on:
+      - redis-master
+    networks:
+      - fa-net
+
+  auth:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: fa-auth
+    environment:
+      LISTEN_ADDR: ":8080"
+      BASE_PATH: "/com.auth.forward"
+      REDIS_MASTER_ADDR: "redis-master:6379"
+      REDIS_REPLICA_ADDR: "redis-replica:6379"
+      REDIS_DB: "0"
+      JWT_SECRET: "${JWT_SECRET:?JWT_SECRET is required}"
+      SESSION_TTL: "15m"
+      RENEW_INTERVAL: "60s"
+      COOKIE_NAME: "fa_token"
+      COOKIE_MAX_AGE: "0"
+      COOKIE_SECURE: "false" # dev/local HTTP
+      TOTP_ISSUER: "forward-auth"
+      MAX_LOGIN_ATTEMPTS: "5"
+      LOGIN_WINDOW: "5m"
+      OTP_REUSE_TTL: "5m"
+      SESSION_WAIT_REPLICAS: "1"
+      SESSION_WAIT_TIMEOUT: "500ms"
+    ports:
+      - "8080:8080"
+    depends_on:
+      - redis-master
+      - redis-replica
+    networks:
+      - fa-net
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "-qO-",
+          "http://localhost:8080/com.auth.forward/healthz",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: fa-caddy
+    ports:
+      - "80:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - auth
+      - demo
+    networks:
+      - fa-net
+
+  demo:
+    image: hashicorp/http-echo
+    container_name: fa-demo
+    command: ["-text", "Hello from protected demo app"]
+    networks:
+      - fa-net
+
+volumes:
+  redis-master-data:
+
+networks:
+  fa-net:
+    driver: bridge

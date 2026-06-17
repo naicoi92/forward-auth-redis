@@ -1,0 +1,30 @@
+{
+  "apps": {
+    "http": {
+      "servers": {
+        "srv0": {
+          "listen": [":80"],
+          "routes": [
+            {
+              "handle": [
+                {
+                  "handler": "forward_auth",
+                  "uri": "/com.auth.forward/auth",
+                  "copy_headers": ["X-Auth-User"],
+                  "headers": {
+                    "X-Forwarded-Uri": ["{http.request.uri}"]
+                  },
+                  "upstreams": [{ "dial": "auth:8080" }]
+                },
+                {
+                  "handler": "reverse_proxy",
+                  "upstreams": [{ "dial": "demo:5678" }]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}

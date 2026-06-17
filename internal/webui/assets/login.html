@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sign in</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+
+        --bg: oklch(98% 0.004 240);
+        --surface: oklch(100% 0 0 / 0.86);
+        --fg: oklch(20% 0.02 240);
+        --muted: oklch(50% 0.018 240);
+        --border: oklch(90% 0.006 240);
+        --accent: oklch(56% 0.12 170);
+        --accent-hover: oklch(50% 0.12 170);
+        --accent-soft: oklch(96% 0.03 170);
+        --glow-1: color-mix(in oklch, var(--accent) 14%, transparent);
+        --glow-2: color-mix(in oklch, var(--accent) 10%, transparent);
+        --error: oklch(55% 0.18 25);
+
+        --font-display: "Avenir Next", -apple-system, BlinkMacSystemFont,
+          system-ui, sans-serif;
+        --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui,
+          sans-serif;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: oklch(18% 0.02 250);
+          --surface: oklch(26% 0.02 250 / 0.72);
+          --fg: oklch(96% 0.01 250);
+          --muted: oklch(68% 0.015 250);
+          --border: oklch(36% 0.015 250);
+          --accent: oklch(68% 0.13 170);
+          --accent-hover: oklch(62% 0.13 170);
+          --accent-soft: oklch(32% 0.04 170);
+          --glow-1: color-mix(in oklch, var(--accent) 18%, transparent);
+          --glow-2: color-mix(in oklch, var(--accent) 12%, transparent);
+          --error: oklch(65% 0.16 25);
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html,
+      body {
+        height: 100%;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: var(--font-body);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        transition:
+          background 0.2s ease,
+          color 0.2s ease;
+      }
+
+      .stage {
+        min-height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: radial-gradient(
+            circle at 20% 20%,
+            var(--glow-1) 0%,
+            transparent 45%
+          ),
+          radial-gradient(circle at 80% 80%, var(--glow-2) 0%, transparent 45%),
+          var(--bg);
+        transition: background 0.2s ease;
+      }
+
+      .login-card {
+        width: 100%;
+        max-width: 360px;
+        padding: 40px 32px;
+        background: var(--surface);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border: 1px solid color-mix(in oklch, var(--border) 60%, transparent);
+        border-radius: 24px;
+        box-shadow:
+          0 24px 70px rgba(0, 0, 0, 0.08),
+          0 10px 24px rgba(0, 0, 0, 0.05);
+        position: relative;
+        transition:
+          background 0.2s ease,
+          border-color 0.2s ease,
+          box-shadow 0.2s ease;
+      }
+
+      .login-header {
+        text-align: center;
+        margin-bottom: 28px;
+      }
+      .login-header h1 {
+        font-family: var(--font-display);
+        font-size: 28px;
+        font-weight: 700;
+        line-height: 1.25;
+        margin-bottom: 6px;
+      }
+      .login-header p {
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.5;
+      }
+
+      .form-msg {
+        display: none;
+        color: var(--error);
+        font-size: 14px;
+        margin-bottom: 16px;
+        line-height: 1.4;
+        text-align: center;
+      }
+      .form-msg:not(:empty) {
+        display: block;
+      }
+
+      .field {
+        margin-bottom: 18px;
+      }
+      .field label {
+        display: block;
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 6px;
+        color: var(--fg);
+      }
+      .field input {
+        width: 100%;
+        height: 46px;
+        padding: 0 14px;
+        font-size: 15px;
+        color: var(--fg);
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        outline: none;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s,
+          background 0.2s ease;
+        font-family: var(--font-body);
+      }
+      .field input::placeholder {
+        color: var(--muted);
+        opacity: 0.7;
+      }
+      .field input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 4px
+          color-mix(in oklch, var(--accent) 16%, transparent);
+      }
+
+      .password-wrap {
+        position: relative;
+      }
+      .password-wrap input {
+        padding-right: 46px;
+      }
+      .toggle-password {
+        position: absolute;
+        right: 6px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 34px;
+        height: 34px;
+        display: grid;
+        place-items: center;
+        background: transparent;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        color: var(--muted);
+        transition:
+          color 0.15s,
+          background 0.15s;
+      }
+      .toggle-password:hover {
+        color: var(--fg);
+        background: var(--accent-soft);
+      }
+      .toggle-password svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      .submit {
+        width: 100%;
+        height: 46px;
+        margin-top: 8px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 999px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition:
+          background 0.15s,
+          transform 0.05s,
+          opacity 0.15s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+      .submit:hover {
+        background: var(--accent-hover);
+      }
+      .submit:active {
+        transform: translateY(1px);
+      }
+
+      /* htmx automatically adds the .htmx-request class to the request element
+       (here the form, because hx-post is on the form). We use it to show the
+       spinner and fade the label without any custom submit listener. */
+      .submit .spinner {
+        display: none;
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255, 255, 255, 0.4);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+      }
+      .htmx-request .submit .spinner {
+        display: block;
+      }
+      .htmx-request .submit .label {
+        opacity: 0.7;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @media (max-width: 420px) {
+        .stage {
+          padding: 16px;
+        }
+        .login-card {
+          padding: 36px 22px;
+        }
+        .login-header h1 {
+          font-size: 25px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="stage">
+      <main class="login-card">
+        <div class="login-header">
+          <h1>Sign in</h1>
+          <p>Enter your username and 6-digit authentication code.</p>
+        </div>
+
+        <div id="form-msg" class="form-msg">{{.Error}}</div>
+
+        <!--
+        htmx handles the POST automatically. The browser falls back to the real
+        action/method if JS is disabled. On success the server returns an
+        HX-Redirect header; on failure it returns an HTML fragment swapped into
+        #form-msg. The .htmx-request class (added by htmx to this form) drives
+        the spinner and disabled button via pure CSS.
+      -->
+        <form
+          id="login-form"
+          action="{{.BasePath}}/login"
+          method="post"
+          hx-post="{{.BasePath}}/login"
+          hx-target="#form-msg"
+          hx-swap="innerHTML"
+          hx-disabled-elt="#submit-btn"
+        >
+          {{if .CSRF}}
+          <input type="hidden" name="csrf_token" value="{{.CSRF}}" />
+          {{end}}
+          <input type="hidden" name="return_to" value="{{.ReturnTo}}" />
+
+          <div class="field">
+            <label for="username">Username</label>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              autocomplete="username"
+              placeholder="your_name"
+              required
+              minlength="1"
+            />
+          </div>
+
+          <div class="field">
+            <label for="password">Authentication code</label>
+            <div class="password-wrap">
+              <input
+                type="password"
+                id="password"
+                name="code"
+                autocomplete="one-time-code"
+                inputmode="numeric"
+                pattern="[0-9]{6}"
+                maxlength="6"
+                placeholder="123456"
+                required
+              />
+              <button
+                type="button"
+                class="toggle-password"
+                id="toggle-password"
+                aria-label="Show code"
+                title="Show / hide code"
+              >
+                <svg
+                  id="eye-icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="submit" id="submit-btn">
+            <span class="spinner" aria-hidden="true"></span>
+            <span class="label">Sign in</span>
+          </button>
+        </form>
+      </main>
+    </div>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.9/dist/htmx.min.js"
+      integrity="sha384-ESlCao+z/oasnu2Uc/5K1LQTI7YCF2KKO4xakCPQCFuiHhCh8Oa/R5NwHY6guZ3m"
+      crossorigin="anonymous"
+    ></script>
+
+    <script>
+      (function () {
+        // Show/hide the TOTP code like a password field.
+        var password = document.getElementById("password");
+        var toggleBtn = document.getElementById("toggle-password");
+        var eyeIcon = document.getElementById("eye-icon");
+        var eyeOpen =
+          '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+        var eyeClosed =
+          '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.88 9.88 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+
+        toggleBtn.addEventListener("click", function () {
+          var isPassword = password.type === "password";
+          password.type = isPassword ? "text" : "password";
+          toggleBtn.setAttribute(
+            "aria-label",
+            isPassword ? "Hide code" : "Show code",
+          );
+          eyeIcon.innerHTML = isPassword ? eyeClosed : eyeOpen;
+        });
+      })();
+    </script>
+  </body>
+</html>

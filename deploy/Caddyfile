@@ -1,0 +1,51 @@
+{
+	auto_https off
+}
+
+:80 {
+	# Forward auth check: Caddy sends a virtual GET to the auth service for
+	# every incoming request. If the auth service returns 2xx, the request is
+	# allowed and the X-Auth-User header is copied upstream. Any non-2xx
+	# response (e.g. 302 to login) is returned to the browser.
+	forward_auth auth:8080 {
+		uri /com.auth.forward/auth
+		copy_headers X-Auth-User
+		# Pass the original request URI so the auth service can redirect back
+		# to the requested path after login.
+		header_up X-Forwarded-Uri {uri}
+	}
+
+	# Demo upstream app. Replace with your real app backend.
+	reverse_proxy demo:5678
+}
+
+# To use Caddy's JSON config instead, save the following to Caddyfile.json
+# and run: caddy run --config deploy/Caddyfile.json
+#
+# {
+#   "apps": {
+#     "http": {
+#       "servers": {
+#         "srv0": {
+#           "listen": [":80"],
+#           "routes": [
+#             {
+#               "handle": [
+#                 {
+#                   "handler": "forward_auth",
+#                   "uri": "/com.auth.forward/auth",
+#                   "copy_headers": ["X-Auth-User"],
+#                   "upstreams": [{ "dial": "auth:8080" }]
+#                 },
+#                 {
+#                   "handler": "reverse_proxy",
+#                   "upstreams": [{ "dial": "demo:5678" }]
+#                 }
+#               ]
+#             }
+#           ]
+#         }
+#       }
+#     }
+#   }
+# }
