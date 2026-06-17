@@ -78,7 +78,7 @@ func (s *Service) Login(ctx context.Context, username, code, returnTo string) (*
 	if !found {
 		verifySecret = dummyTOTPSecret
 	}
-	ok := VerifyTOTP(verifySecret, code)
+	ok := VerifyTOTP(verifySecret, code, s.cfg.TOTPSkew)
 	if !found || !ok {
 		return nil, errInvalidCreds
 	}

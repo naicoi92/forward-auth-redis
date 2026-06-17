@@ -1,0 +1,44 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+version: "3"
+
+dotenv: [".env"]
+
+tasks:
+  default:
+    cmds:
+      - task --list
+    silent: true
+
+  seed:
+    desc: Seed a TOTP user locally (needs .env with DATABASE ENV + JWT_SECRET)
+    cmds:
+      - go run ./cmd/seed {{.CLI_ARGS | default "alice"}}
+
+  server:
+    desc: Run the auth server locally (needs .env with DATABASE ENV + JWT_SECRET)
+    cmds:
+      - go run ./cmd/server
+
+  build:
+    desc: Build server and seed binaries
+    cmds:
+      - go build -o bin/seed ./cmd/seed
+      - go build -o bin/server ./cmd/server
+
+  up:
+    desc: Start local Redis + auth stack via Docker Compose
+    dir: deploy
+    cmds:
+      - docker compose up -d
+
+  down:
+    desc: Stop local Docker Compose stack
+    dir: deploy
+    cmds:
+      - docker compose down
+
+  logs:
+    desc: Tail Docker Compose logs
+    dir: deploy
+    cmds:
+      - docker compose logs -f

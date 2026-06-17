@@ -55,7 +55,11 @@ export JWT_SECRET="your-generated-secret"
 go run ./cmd/seed alice
 ```
 
-The command prints the TOTP secret and an `otpauth://` URI. Scan the URI with your authenticator app (or use `oathtool -b --totp <secret>` to generate test codes).
+The command prints the TOTP secret, an `otpauth://` URI, and a QR code to the terminal. Scan the QR or URI with your authenticator app (or use `oathtool -b --totp <secret>` to generate test codes).
+
+### TOTP tolerance
+
+`TOTP_SKEW` sets how many 30-second time steps around the current code are accepted (default: `1`). A value of `1` allows the previous, current, and next codes — useful when a code expires while the user is typing.
 
 ## Test the login
 

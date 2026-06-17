@@ -28,6 +28,7 @@ type Config struct {
 	CookieDomain string `env:"COOKIE_DOMAIN"`
 
 	TOTPIssuer string `env:"TOTP_ISSUER" envDefault:"forward-auth"`
+	TOTPSkew   uint   `env:"TOTP_SKEW" envDefault:"1"`
 
 	MaxLoginAttempts int           `env:"MAX_LOGIN_ATTEMPTS" envDefault:"5"`
 	LoginWindow      time.Duration `env:"LOGIN_WINDOW" envDefault:"5m"`
@@ -62,6 +63,9 @@ func (c *Config) validate() error {
 	if err := validateLoginGuard(c); err != nil {
 		return err
 	}
+	if err := validateTOTP(c); err != nil {
+		return err
+	}
 	if err := validateSessionWait(c); err != nil {
 		return err
 	}
@@ -91,6 +95,13 @@ func validateLoginGuard(c *Config) error {
 	}
 	if c.OTPReuseTTL <= 0 {
 		return fmt.Errorf("OTP_REUSE_TTL must be positive, got %v", c.OTPReuseTTL)
+	}
+	return nil
+}
+
+func validateTOTP(c *Config) error {
+	if c.TOTPSkew <= 0 {
+		return fmt.Errorf("TOTP_SKEW must be positive, got %d", c.TOTPSkew)
 	}
 	return nil
 }
