@@ -40,7 +40,6 @@ func AssetFS() fs.FS {
 // LoginData is passed to the login template.
 type LoginData struct {
 	BasePath string
-	CSRF     string
 	Error    string
 	ReturnTo string
 }

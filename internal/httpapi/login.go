@@ -1,7 +1,6 @@
 package httpapi
 
 import (
-	"crypto/subtle"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -12,14 +11,8 @@ import (
 
 // loginForm renders the login page.
 func (h *Handler) loginForm(w http.ResponseWriter, r *http.Request) {
-	csrf, err := h.cookie.SetCSRF(w)
-	if err != nil {
-		http.Error(w, "failed to generate csrf token", http.StatusInternalServerError)
-		return
-	}
 	data := webui.LoginData{
 		BasePath: h.cfg.BasePath,
-		CSRF:     csrf,
 		Error:    "",
 		ReturnTo: r.URL.Query().Get("return_to"),
 	}
@@ -40,12 +33,6 @@ func (h *Handler) loginSubmit(w http.ResponseWriter, r *http.Request) {
 	username := r.PostFormValue("username")
 	code := r.PostFormValue("code")
 	returnTo := r.PostFormValue("return_to")
-	csrf := r.PostFormValue("csrf_token")
-
-	if !h.validateCSRF(r, csrf) {
-		h.renderLoginError(w, r, "invalid csrf token", http.StatusForbidden)
-		return
-	}
 
 	result, err := h.svc.Login(r.Context(), username, code, returnTo)
 	if err != nil {
@@ -71,25 +58,7 @@ func (h *Handler) loginSubmit(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, result.ReturnTo, http.StatusFound)
 }
 
-func (h *Handler) validateCSRF(r *http.Request, token string) bool {
-	if token == "" {
-		return false
-	}
-	expected := h.cookie.ReadCSRF(r)
-	if expected == "" {
-		return false
-	}
-	return subtle.ConstantTimeCompare([]byte(token), []byte(expected)) == 1
-}
-
 func (h *Handler) renderLoginError(w http.ResponseWriter, r *http.Request, msg string, status int) {
-	// Ensure a CSRF token exists for re-rendered forms so the user can retry.
-	csrf, err := h.cookie.SetCSRF(w)
-	if err != nil {
-		http.Error(w, "failed to generate csrf token", http.StatusInternalServerError)
-		return
-	}
-
 	if r.Header.Get("HX-Request") == "true" {
 		// Return an HTML fragment so htmx swaps cleanly into #form-msg.
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -108,7 +77,6 @@ func (h *Handler) renderLoginError(w http.ResponseWriter, r *http.Request, msg s
 	}
 	data := webui.LoginData{
 		BasePath: h.cfg.BasePath,
-		CSRF:     csrf,
 		Error:    msg,
 		ReturnTo: returnTo,
 	}

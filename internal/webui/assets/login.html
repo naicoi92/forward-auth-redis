@@ -285,9 +285,6 @@
           hx-swap="innerHTML"
           hx-disable="#submit-btn"
         >
-          {{if .CSRF}}
-          <input type="hidden" name="csrf_token" value="{{.CSRF}}" />
-          {{end}}
           <input type="hidden" name="return_to" value="{{.ReturnTo}}" />
 
           <div class="field">

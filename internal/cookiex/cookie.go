@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/naicoi92/forward-auth-redis/internal/config"
-	"github.com/naicoi92/forward-auth-redis/internal/randutil"
 )
 
 // Builder constructs and reads authentication cookies.
@@ -17,51 +16,6 @@ type Builder struct {
 // New creates a cookie builder from configuration.
 func New(cfg *config.Config) *Builder {
 	return &Builder{cfg: cfg, basePath: cfg.BasePath}
-}
-
-const csrfCookieName = "fa_csrf"
-
-// SetCSRF writes a double-submit CSRF cookie and returns its value.
-func (b *Builder) SetCSRF(w http.ResponseWriter) (string, error) {
-	token, err := randomToken()
-	if err != nil {
-		return "", err
-	}
-	http.SetCookie(w, &http.Cookie{
-		Name:     csrfCookieName,
-		Value:    token,
-		Path:     b.basePath,
-		Domain:   b.cfg.CookieDomain,
-		MaxAge:   0,
-		HttpOnly: true,
-		Secure:   b.cfg.CookieSecure,
-		SameSite: http.SameSiteStrictMode,
-	})
-	return token, nil
-}
-
-// ReadCSRF returns the value of the CSRF cookie, if present.
-func (b *Builder) ReadCSRF(r *http.Request) string {
-	c, err := r.Cookie(csrfCookieName)
-	if err != nil {
-		return ""
-	}
-	return c.Value
-}
-
-// ClearCSRF removes the CSRF cookie.
-func (b *Builder) ClearCSRF(w http.ResponseWriter) {
-	http.SetCookie(w, &http.Cookie{
-		Name:     csrfCookieName,
-		Value:    "",
-		Path:     b.basePath,
-		Domain:   b.cfg.CookieDomain,
-		MaxAge:   -1,
-		Expires:  time.Unix(0, 0),
-		HttpOnly: true,
-		Secure:   b.cfg.CookieSecure,
-		SameSite: http.SameSiteStrictMode,
-	})
 }
 
 // Set writes the JWT cookie to the response. The auth cookie intentionally
@@ -102,8 +56,4 @@ func (b *Builder) Read(r *http.Request) string {
 		return ""
 	}
 	return c.Value
-}
-
-func randomToken() (string, error) {
-	return randutil.Hex(32)
 }
