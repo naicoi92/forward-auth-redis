@@ -52,7 +52,7 @@ func (h *Handler) loginSubmit(w http.ResponseWriter, r *http.Request) {
 		// All TOTP/replay failures are reported with the same generic message to
 		// avoid leaking whether a username exists or whether a code was replayed.
 		msg := "invalid credentials"
-		status := http.StatusUnprocessableEntity
+		status := http.StatusUnauthorized
 		if errors.Is(err, auth.ErrTooManyAttempts) {
 			status = http.StatusTooManyRequests
 			msg = err.Error()
